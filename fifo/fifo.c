@@ -1,79 +1,40 @@
-#include <linux/miscdevice.h>
-#include <linux/fs.h>
+
 #include <linux/kernel.h>
 #include <linux/module.h>
-
-static ssize_t dRead(struct file *filp, /* see include/linux/fs.h   */
-                           char *buffer,      /* buffer to fill with data */
-                           size_t length,     /* length of the buffer     */
-                           loff_t *offset)
-{
-///////////////////////////////////////////////////////////////////////////
-////Write code here
-
-
-///////////////////////////////////////////////////////////////////////////	
-return bytes_read;
-}
+#include <linux/fs.h>
+#include <asm/uaccess.h>
+#include <linux/slab.h>
+#include <linux/semaphore.h>
+#include <linux/init.h>
+#include <linux/miscdevice.h>
+#include <linux/platform_device.h>
+#include <linux/rtc.h>
+#include <linux/sched.h>
 
 
-static int sample_open(struct inode *inode, struct file *file)
-{
-    pr_info("I have been awoken\n");
-    return 0;
-}
+//buffer slots to read and write
+static int buffer_empty_slots;
 
-static int sample_close(struct inode *inodep, struct file *filp)
-{
-    pr_info("Sleepy time\n");
-    return 0;
-}
+//sempaphore for buffer
+static struct semaphore full;
+static struct semaphore empty;
 
-static ssize_t sample_write(struct file *file, const char __user *buf,
-		       size_t len, loff_t *ppos)
-{
-    pr_info("Yummy - I just ate %d bytes\n", len);
-    return len; /* But we don't actually do anything with the data */
-}
+//semaphore for read/write operations
+static struct semaphore read_op_mutex;
+static struct semaphore write_op_mutex;
 
-static const struct file_operations sample_fops = {
-    .owner			= THIS_MODULE,
-    .write			= sample_write,
-    .read			= dRead,
-    .open			= sample_open,
-    .release		= sample_close,
-    .llseek 		= no_llseek,
+//buffer to store strings
+char** buffer;
+
+//declaring file operation functions
+static int fifo_open(struct inode*, struct file*);
+static ssize_t fifo_read(struct file*, char*, size_t, loff_t*);
+static ssize_t fifo_write(struct file*, const char*, size_t, loff_t*);
+static int fifo_release(struct inode*, struct file*);
+
+static struct file_operations my_device_fops = {
+	.open = &fifo_open,
+	.read = &fifo_read,
+	.write = &fifo_write,
+	.release = &fifo_release
 };
-
-struct miscdevice sample_device = {
-    .minor = MISC_DYNAMIC_MINOR,
-    .name = "kMod",
-    .fops = &sample_fops,
-};
-
-static int __init misc_init(void)
-{
-    int error;
-
-    error = misc_register(&sample_device);
-    if (error) {
-        pr_err("can't misc_register :(\n");
-        return error;
-    }
-
-    pr_info("I'm in\n");
-    return 0;
-}
-
-static void __exit misc_exit(void)
-{
-    misc_deregister(&sample_device);
-    pr_info("I'm out\n");
-}
-
-module_init(misc_init)
-module_exit(misc_exit)
-
-MODULE_DESCRIPTION("Simple Misc Driver");
-MODULE_AUTHOR("Tony");
-MODULE_LICENSE("GPL");
