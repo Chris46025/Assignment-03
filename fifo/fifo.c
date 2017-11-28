@@ -94,5 +94,73 @@ int init_module(){
 	return 0;
 }
 
+static int fifo_open(struct inode* _inode, struct file* _file){
+	++open_count;
+	return 0;
+}
+
+//Read file operation function, is called from the consumer
+static ssize_t my_read(struct file* _file, char* user_buffer, size_t number_of_chars_to_be_read, loff_t* offset){
+	int user_buffer_index = 0;
+	
+	down_interruptible(&read_op_mutex);
+	down_interruptible(&full);
+	
+	read_index %= buffer_size;
+	
+	for(user_buffer_index = 0; user_buffer_index < number_of_chars_to_be_read; user_buffer_index++){
+		if(buffer_empty_slots >= buffer_size){
+			break;
+		}
+		copy_to_user(&user_buffer[user_buffer_index], &buffer[read_index][user_buffer_index], 1);
+	}
+	++read_index;
+	++buffer_empty_slots;
+	
+	up(&empty);
+	up(&read_op_mutex);
+	
+	return user_buffer_index;
+}
+
+//Write file operation function, is called from the producer
+static ssize_t my_write(struct file* _file, const char* user_buffer, size_t number_of_chars_to_write, loff_t* offset){
+	int user_buffer_index = 0;
+	int i = 0;
+
+	down_interruptible(&write_op_mutex);
+	down_interruptible(&empty);
+	
+	write_index %= buffer_size;
+	
+	for(user_buffer_index = 0; user_buffer_index < number_of_chars_to_write; user_buffer_index++){
+		if(buffer_empty_slots <= 0){
+			break;
+		}
+		copy_from_user(&buffer[write_index][user_buffer_index], &user_buffer[user_buffer_index], 1);
+	}
+	
+	++write_index;
+	--buffer_empty_slots;
+	
+	up(&full);
+	up(&write_op_mutex);
+	
+	return user_buffer_index;
+}
+
+static int my_release(struct inode* _inode, struct file* _file){
+	--open_count;
+	return 0;
+}
+
+void cleanup_module(){
+	int _iter;
+	for(_iter = 0; _iter < buffer_size; _iter++){
+		kfree(buffer[_iter]);
+	}
+	misc_deregister(&my_device);
+	printk(KERN_INFO "Device %s Unregistered!\n", device_name);
+}
 
 
