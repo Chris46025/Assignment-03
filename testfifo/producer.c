@@ -1,55 +1,35 @@
+/*Program to produce strings and write to the character device*/
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <assert.h>
-#include <ctype.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <errno.h>
 
-#define MAXLEN 100
-
-int main(int argc, char *argv[])
-{
-	int fd;
-	char numstr[MAXLEN];
-	int count = 0;
-	int num_to_write;
-
-	if( argc != 2) {
-		printf("Usage: %s <numpipe_name>\n", argv[0]);
-		exit(1);
-	}	
-
-	if ( (fd = open(argv[1], O_WRONLY)) < 0) {
-		perror(""); printf("error opening %s\n", argv[1]);
-		exit(1);
-	} 
-	
-	// Prevent producer from dying due to SIGPIPE when last consumer quits
-	signal(SIGPIPE, SIG_IGN); 
-
-	while(1) {
-		bzero(numstr, MAXLEN);
-		sprintf(numstr, "%d%d\n", getpid(), count++);
-		num_to_write = atoi(numstr);
-		printf("Writing: %d", num_to_write);
-
-		// write to pipe
-		ssize_t ret = write(fd, &num_to_write, sizeof(int));
-		if ( ret < 0) {
-			fprintf(stderr, "error writing ret=%ld errno=%d perror: ", ret, errno);
-			perror("");
-		} else {
-			printf("Bytes written: %ld\n", ret);
+int main(int argc, char* argv[]){
+	char* input_string = argv[1];
+	int input_string_length = atoi(argv[2]);
+	int file_ptr = open("/dev/my_misc_device", O_WRONLY);
+	if(file_ptr == -1){
+		printf("Error: Device open failure!\n");
+		exit(0);
+	}
+	int _iter = 0;
+	while(1){
+		printf("writing string %s\n", input_string);
+		int number_of_bytes_written = write(file_ptr, input_string, input_string_length);
+		if(number_of_bytes_written <= 0){
+			printf("Error: Insufficient space!\n");
+			exit(0);
+		}
+		else{
+			printf("Iteration: %d\n", ++_iter);
+			printf("--------------\n");
+			printf("Write successful!\n");
+			printf("Number of bytes written = %d\n", number_of_bytes_written);
 		}
 		sleep(1);
 	}
-
-	close(fd);
-
+	close(file_ptr);
 	return 0;
 }
