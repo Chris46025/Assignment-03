@@ -100,7 +100,7 @@ static int fifo_open(struct inode* _inode, struct file* _file){
 }
 
 //Read file operation function, is called from the consumer
-static ssize_t my_read(struct file* _file, char* user_buffer, size_t number_of_chars_to_be_read, loff_t* offset){
+static ssize_t fifo_read(struct file* _file, char* user_buffer, size_t number_of_chars_to_be_read, loff_t* offset){
 	int user_buffer_index = 0;
 	
 	down_interruptible(&read_op_mutex);
@@ -124,7 +124,7 @@ static ssize_t my_read(struct file* _file, char* user_buffer, size_t number_of_c
 }
 
 //Write file operation function, is called from the producer
-static ssize_t my_write(struct file* _file, const char* user_buffer, size_t number_of_chars_to_write, loff_t* offset){
+static ssize_t fifo_write(struct file* _file, const char* user_buffer, size_t number_of_chars_to_write, loff_t* offset){
 	int user_buffer_index = 0;
 	int i = 0;
 
@@ -149,7 +149,7 @@ static ssize_t my_write(struct file* _file, const char* user_buffer, size_t numb
 	return user_buffer_index;
 }
 
-static int my_release(struct inode* _inode, struct file* _file){
+static int fifo_release(struct inode* _inode, struct file* _file){
 	--open_count;
 	return 0;
 }
