@@ -1,11 +1,10 @@
-obj-m += fifo.o
-KDIR := /lib/modules/$(shell uname -r)/build
-PWD := $(shell pwd)
+obj-m = fifo.o
 
-CC := $(CROSS_COMPILE)gcc
+KBUILD_CFLAGS += -w
 
 all:
-	$(MAKE) -C $(KDIR) M=${shell pwd} modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules $(KBUILD_CFLAGS)
+	gcc producer.c -o producer.o
+	gcc consumer.c -o consumer.o
 clean:
-	-$(MAKE) -C $(KDIR) M=${shell pwd} clean || true
-	-rm *.o *.ko *.mod.{c,o} modules.order Module.symvers || true
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
