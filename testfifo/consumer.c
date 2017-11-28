@@ -1,46 +1,38 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+#include <fcntl.h>
 #include <assert.h>
-#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <unistd.h>
 
-#define MAXLEN 100
-
-int main(int argc, char *argv[])
-{
-
-	int fd;
-	char numstr[MAXLEN];
-	int num_read;
-
-	if( argc != 2) {
-		printf("Usage: %s <numpipe_name>\n", argv[0]);
-		exit(1);
+void main(int argc, char *argv[]){
+	char* buff;
+	int bytes_to_read = atoi(argv[1]);
+	buff = (char*)malloc(bytes_to_read*sizeof(char));
+	int _iteration = 0;
+	int fp = open("/dev/my_misc_device",O_RDWR);
+	if(fp == -1){
+		printf("Error: Could not open the file!\n");
+		exit(0);
 	}
 
-	if ( (fd = open(argv[1], O_RDONLY)) < 0) {
-		perror(""); printf("error opening %s\n", argv[1]);
-		exit(1);
-	}
-
-	while(1) {
-		// read a line
-		ssize_t ret = read(fd, &num_read, sizeof(int));
-		if( ret > 0) {
-			printf("Number read: %d ", num_read);
-			printf("Bytes read: %ld\n", ret);
-		} else {
-			fprintf(stderr, "error reading ret=%ld errno=%d perror: ", ret, errno);
-			perror("");
-			sleep(1);
+	while(1){
+		printf("\nIteration %d\n", _iteration++);
+		printf("------------\n");
+       		int bytes_actually_read = 0;
+		bytes_actually_read = read(fp,&buff,bytes_to_read);
+		if(bytes_actually_read >0){
+			printf("bytes read = %d: ", bytes_actually_read);
+			printf("%s\n", &buff);
+			printf("----------------------------------");	
 		}
+		else{
+			printf("No characters read!\n");
+		}
+		sleep(1);
 	}
-	close(fd);
-
-	return 0;
+	close(fp);
+	return ;
 }
