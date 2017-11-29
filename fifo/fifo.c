@@ -12,7 +12,7 @@
 #include <linux/sched.h>
 
 //misc device struct
-static struct miscdevice my_device;
+static struct miscdevice fifo;
 
 //number of open devices
 static int open_count;
@@ -49,7 +49,7 @@ static ssize_t fifo_read(struct file*, char*, size_t, loff_t*);
 static ssize_t fifo_write(struct file*, const char*, size_t, loff_t*);
 static int fifo_release(struct inode*, struct file*);
 
-static struct file_operations my_device_fops = {
+static struct file_operations fifo_fops = {
 	.open = &fifo_open,
 	.read = &fifo_read,
 	.write = &fifo_write,
@@ -59,21 +59,17 @@ static struct file_operations my_device_fops = {
 //initialize module, allocate memory, initialize semaphores ...*/
 int init_module(){
 	//initializing parameters for my_device
-	my_device.name = device_name;
-	my_device.minor = MISC_DYNAMIC_MINOR;
-	my_device.fops = &my_device_fops;
+	fifo.name = fifo;
+	fifo.minor = MISC_DYNAMIC_MINOR;
+	fifo.fops = &fifo_fops;
 	
 	//register the device
 	int register_return_value;
-	if((register_return_value = misc_register(&my_device))){
+	if((register_return_value = misc_register(&fifo))){
 		printk(KERN_ERR "Could not register the device\n");
 		return register_return_value;
 	}
 	printk(KERN_INFO "Device Registered!\n");
-	printk(KERN_INFO "Device Details\n--------------\n");
-	printk(KERN_INFO "device name: %s\n", device_name);
-	printk(KERN_INFO "buffer size: %d\n", buffer_size);
-	printk(KERN_INFO "--------------\n");
 	
 	//allocating memory for the buffer
 	int _allocated = 0;
@@ -159,7 +155,7 @@ void cleanup_module(){
 	for(_iter = 0; _iter < buffer_size; _iter++){
 		kfree(buffer[_iter]);
 	}
-	misc_deregister(&my_device);
+	misc_deregister(&fifo);
 	printk(KERN_INFO "Device %s Unregistered!\n", device_name);
 }
 
