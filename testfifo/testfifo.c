@@ -36,10 +36,10 @@ module_param(string_char_count, int, 0000);
 
 char** buffer;
 
-static int my_open(struct inode*, struct file*);
-static ssize_t my_read(struct file*, char*, size_t, loff_t*);
-static ssize_t my_write(struct file*, const char*, size_t, loff_t*);
-static int my_release(struct inode*, struct file*);
+static int fifo_open(struct inode*, struct file*);
+static ssize_t fifo_read(struct file*, char*, size_t, loff_t*);
+static ssize_t fifo_write(struct file*, const char*, size_t, loff_t*);
+static int fifo_release(struct inode*, struct file*);
 
 static struct file_operations my_device_fops = {
 	.open = &fifo_open,
