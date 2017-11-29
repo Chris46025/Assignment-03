@@ -59,7 +59,7 @@ static struct file_operations fifo_fops = {
 //initialize module, allocate memory, initialize semaphores ...*/
 int init_module(){
 	//initializing parameters for my_device
-	fifo.name = fifo;
+	fifo.name = device_name;
 	fifo.minor = MISC_DYNAMIC_MINOR;
 	fifo.fops = &fifo_fops;
 	
